@@ -17,27 +17,20 @@ const Package = require("./package.json");
 class NodeMediaServer {
   constructor(config) {
     this.config = config;
-  }
 
-  run() {
-    Logger.setLogType(this.config.logType);
-    Logger.log(`Node Media Server v${Package.version}`);
     if (this.config.rtmp) {
-      this.nrs = new NodeRtmpServer(this.config);
-      this.nrs.run();
+      this.nrs = this.config.rtmp.factory && typeof this.config.rtmp.factory === 'function'? this.config.rtmp.factory(context, this.config, Logger, NodeRtmpServer) : new NodeRtmpServer(this.config);
     }
 
     if (this.config.http) {
-      this.nhs = new NodeHttpServer(this.config);
-      this.nhs.run();
+      this.nhs = this.config.http.factory && typeof this.config.http.factory === 'function'? this.config.http.factory(context, this.config, Logger, NodeHttpServer) : new NodeHttpServer(this.config);
     }
 
     if (this.config.trans) {
       if (this.config.cluster) {
         Logger.log('NodeTransServer does not work in cluster mode');
       } else {
-        this.nts = new NodeTransServer(this.config);
-        this.nts.run();
+        this.nts = this.config.trans.factory && typeof this.config.trans.factory === 'function'? this.config.trans.factory(context, this.config, Logger, NodeTransServer) : new NodeTransServer(this.config);
       }
     }
 
@@ -45,8 +38,7 @@ class NodeMediaServer {
       if (this.config.cluster) {
         Logger.log('NodeRelayServer does not work in cluster mode');
       } else {
-        this.nls = new NodeRelayServer(this.config);
-        this.nls.run();
+        this.nls = this.config.relay.factory && typeof this.config.relay.factory === 'function'? this.config.relay.factory(context, this.config, Logger, NodeRelayServer) : new NodeRelayServer(this.config);
       }
     }
 
@@ -54,9 +46,25 @@ class NodeMediaServer {
       if (this.config.cluster) {
         Logger.log('NodeFissionServer does not work in cluster mode');
       } else {
-        this.nfs = new NodeFissionServer(this.config);
-        this.nfs.run();
+        this.nfs = this.config.fission.factory && typeof this.config.fission.factory === 'function'? this.config.fission.factory(context, this.config, Logger, NodeFissionServer) : new NodeFissionServer(this.config);
       }
+    }
+  }
+
+  run() {
+    Logger.setLogType(this.config.logType);
+    Logger.log(`Node Media Server v${Package.version}`);
+    if (this.nrs) {
+      this.nrs.run();
+    }
+    if (this.nhs) {
+      this.nhs.run();
+    }
+    if (this.nls) {
+      this.nls.run();
+    }
+    if (this.nfs) {
+      this.nfs.run();
     }
 
     process.on('uncaughtException', function (err) {
