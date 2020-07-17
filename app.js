@@ -6,7 +6,33 @@ const config = {
     chunk_size: 60000,
     gop_cache: true,
     ping: 30,
-    ping_timeout: 60
+    ping_timeout: 60,
+    validate: {
+      connect: invokeMessage => {
+        console.log('Can I Connect?', invokeMessage);
+
+        return new Promise((resolve, reject) => {
+          resolve(invokeMessage);
+          //reject('Nope!');
+        });
+      },
+      publish: invokeMessage => {
+        console.log('Can I Publish?', invokeMessage);
+
+        return new Promise((resolve, reject) => {
+          //resolve(invokeMessage);
+          reject('Nope!');
+        });
+      },
+      play: invokeMessage => {
+        console.log('Can I Play?', invokeMessage);
+
+        return new Promise((resolve, reject) => {
+          //resolve(invokeMessage);
+          reject('Nope!');
+        });
+      }
+    }
   },
   http: {
     port: 8000,

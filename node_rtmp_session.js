@@ -104,6 +104,11 @@ const RtmpPacket = {
 class NodeRtmpSession {
   constructor(config, socket) {
     this.config = config;
+
+    if(this.config.rtmp && this.config.rtmp.validate && typeof this.config.rtmp.validate === 'object') {
+      this.validate = this.config.rtmp.validate;
+    }
+
     this.socket = socket;
     this.res = socket;
     this.id = NodeCoreUtils.generateNewSessionID();
@@ -811,7 +816,17 @@ class NodeRtmpSession {
     // Logger.log(invokeMessage);
     switch (invokeMessage.cmd) {
       case "connect":
-        this.onConnect(invokeMessage);
+        if(this.validate && this.validate.connect) {
+          invokeMessage.cmdObj.app = invokeMessage.cmdObj.app.replace("/", ""); //fix jwplayer @see this.onConnect
+          this.validate.connect(invokeMessage).then(invokeMessage => {
+            this.onConnect(invokeMessage);
+          }).catch(message => {
+            this.sendStatusMessage(this.playStreamId, 'error', 'Validate.connect', message);
+            this.reject(); //to avoid that OBS froze will also emit all the correct events
+          });
+        } else {
+          this.onConnect(invokeMessage);
+        }
         break;
       case "releaseStream":
         break;
@@ -821,10 +836,27 @@ class NodeRtmpSession {
         this.onCreateStream(invokeMessage);
         break;
       case "publish":
-        this.onPublish(invokeMessage);
+        if(this.validate && this.validate.publish) {
+          this.validate.publish(invokeMessage).then(invokeMessage => {
+            this.onPublish(invokeMessage);
+          }).catch(message => {
+            this.sendStatusMessage(this.playStreamId, 'error', 'Validate.publish', message);
+            this.reject(); //to avoid that OBS froze will also emit all the correct events
+          });
+        } else {
+          this.onPublish(invokeMessage);
+        }
         break;
       case "play":
-        this.onPlay(invokeMessage);
+        if(this.validate && this.validate.play) {
+          this.validate.play(invokeMessage).then(invokeMessage => {
+            this.onPlay(invokeMessage);
+          }).catch(message => {
+            this.sendStatusMessage(this.playStreamId, 'error', 'Validate.play', message);
+          });
+        } else {
+          this.onPlay(invokeMessage);
+        }
         break;
       case "pause":
         this.onPause(invokeMessage);
