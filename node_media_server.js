@@ -60,6 +60,9 @@ class NodeMediaServer {
     if (this.nhs) {
       this.nhs.run();
     }
+    if (this.nts) {
+      this.nts.run();
+    }
     if (this.nls) {
       this.nls.run();
     }
@@ -102,6 +105,9 @@ class NodeMediaServer {
     }
     if (this.nhs) {
       this.nhs.stop();
+    }
+    if (this.nts) {
+      this.nts.stop();
     }
     if (this.nls) {
       this.nls.stop();
